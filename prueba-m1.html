@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Práctica PAES · Competencia Matemática 1</title>
+
+  <!-- KaTeX vendorizado (§7.10): sin red, sin CDN. Se genera con
+       `npm run vendor:katex`. Si falta, app.js avisa y las fórmulas se
+       muestran como LaTeX legible. -->
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+
+  <!-- Alternativa CDN, OPCIONAL y desactivada a propósito (RNF-2): activarla
+       filtra a un tercero cada vez que se abre la app. Los dos `integrity`
+       están copiados verbatim de `node_modules/katex/dist/README.md` del
+       paquete katex@0.19.0, no inventados (§7.10). Si se cambia de versión,
+       hay que volver a copiar los hashes de esa versión o la carga se
+       bloqueará sin explicación.
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.css" integrity="sha384-3rdsX6e5mueWyoweR9NIVmtEsUkokpBT/0ALqKKIBMr9j4qhHkaIkAcGgsE6uVlp" crossorigin="anonymous">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.19.0/dist/katex.min.js" integrity="sha384-QFFtAGzvvj+bfgCGxXJlNZZR1nXEZgvG8tDLCCY1F19xl20WlfTYgguB4VcNdxYk" crossorigin="anonymous"></script>
+  -->
+
+  <style>
+    /* ---- Base y legibilidad (misma paleta y tipografía que Lenguaje) ---- */
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0 1rem 3rem;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: #1a1a1a;
+      background-color: #fafafa;
+    }
+
+    .app-header {
+      max-width: 48rem;
+      margin: 0 auto;
+      padding: 1.5rem 0 1rem;
+    }
+
+    .app-header h1 {
+      font-size: 1.5rem;
+      margin: 0 0 0.25rem;
+    }
+
+    main#app {
+      max-width: 48rem;
+      margin: 0 auto;
+    }
+
+    h2 {
+      font-size: 1.25rem;
+      margin: 0 0 0.75rem;
+    }
+
+    h3 {
+      font-size: 1.05rem;
+      margin: 1.25rem 0 0.5rem;
+    }
+
+    /* Contraste: #444 sobre #fafafa da 9,0:1; #595959 sobre #fff da 7,0:1.
+       Ningún texto secundario baja de 4,5:1 (RF-9.4). */
+    .secundario {
+      color: #444;
+      font-size: 0.95rem;
+    }
+
+    #mensaje-carga {
+      font-size: 1.05rem;
+      color: #444;
+    }
+
+    .error {
+      font-size: 1.05rem;
+      color: #7a1f1f;
+      background-color: #fdeaea;
+      border: 1px solid #f1b3b3;
+      border-radius: 0.375rem;
+      padding: 0.75rem 1rem;
+    }
+
+    .error code {
+      background-color: #fff;
+      border: 1px solid #e0a9a9;
+      border-radius: 0.25rem;
+      padding: 0.1rem 0.35rem;
+      font-size: 0.95em;
+    }
+
+    .tarjeta {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 0.5rem;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ---- Foco visible: contorno propio, nunca `outline: none` pelado
+           (RF-9.3, criterio 62) ---- */
+    a:focus-visible,
+    button:focus-visible,
+    input:focus-visible,
+    summary:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid #1d4ed8;
+      outline-offset: 2px;
+      border-radius: 0.25rem;
+    }
+
+    /* Navegadores sin :focus-visible: el foco clásico sigue visible. */
+    a:focus,
+    button:focus,
+    input:focus,
+    summary:focus,
+    [tabindex]:focus {
+      outline: 3px solid #1d4ed8;
+      outline-offset: 2px;
+    }
+
+    /* ---- Botones ---- */
+    button {
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 0.55rem 1.05rem;
+      border: 1px solid #2563eb;
+      border-radius: 0.375rem;
+      background-color: #2563eb;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #1d4ed8;
+    }
+
+    button:disabled {
+      background-color: #767676;
+      border-color: #767676;
+      color: #fff;
+      cursor: not-allowed;
+    }
+
+    button.secundarion,
+    button.boton-plano {
+      background-color: #fff;
+      color: #1d4ed8;
+      border-color: #1d4ed8;
+    }
+
+    button.boton-plano:hover:not(:disabled) {
+      background-color: #eaf1ff;
+    }
+
+    button[aria-pressed="true"] {
+      background-color: #1e3a8a;
+      border-color: #1e3a8a;
+      color: #fff;
+    }
+
+    .fila-botones {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      align-items: center;
+      margin-top: 1rem;
+    }
+
+    /* ---- Formulario de configuración ---- */
+    label {
+      font-weight: 600;
+    }
+
+    input[type="text"] {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 1rem;
+      padding: 0.45rem 0.6rem;
+      border: 1px solid #767676;
+      border-radius: 0.375rem;
+      background-color: #fff;
+      color: #1a1a1a;
+      min-width: 16rem;
+    }
+
+    fieldset {
+      border: 1px solid #ddd;
+      border-radius: 0.375rem;
+      margin: 1rem 0 0;
+      padding: 0.75rem 1rem 1rem;
+    }
+
+    legend {
+      font-weight: 600;
+      padding: 0 0.35rem;
+    }
+
+    .opcion {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      margin-top: 0.4rem;
+    }
+
+    .opcion label {
+      font-weight: 400;
+    }
+
+    input[type="checkbox"],
+    input[type="radio"] {
+      width: 1.1rem;
+      height: 1.1rem;
+      margin: 0.35rem 0 0;
+      accent-color: #1d4ed8;
+    }
+
+    .campo-semilla {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      margin: 0.35rem 0 0.5rem;
+    }
+
+    .huella {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    #deficit-pozo {
+      color: #7a1f1f;
+      background-color: #fdeaea;
+      border: 1px solid #f1b3b3;
+      border-radius: 0.375rem;
+      padding: 0.5rem 0.75rem;
+      margin: 0.75rem 0 0;
+    }
+
+    /* ---- Avisos y advertencias honestas (RF-8) ---- */
+    .avisos {
+      background-color: #fffdf3;
+      border: 1px solid #e3d9a8;
+      border-radius: 0.5rem;
+      padding: 0.9rem 1.15rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .avisos h3 {
+      margin-top: 0;
+    }
+
+    .avisos ul {
+      margin: 0;
+      padding-left: 1.2rem;
+    }
+
+    .avisos li {
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+      color: #3d3522;
+    }
+
+    .avisos details {
+      margin-top: 0.9rem;
+      border-top: 1px solid #e3d9a8;
+      padding-top: 0.6rem;
+    }
+
+    .avisos summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .aviso-detalle {
+      display: block;
+      font-size: 0.85rem;
+      color: #595959;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      word-break: break-word;
+    }
+
+    /* ---- Cabecera del ensayo: trazabilidad, progreso, cronómetro ---- */
+    .barra-ensayo {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem 1.5rem;
+      align-items: baseline;
+      justify-content: space-between;
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 0.5rem;
+      padding: 0.75rem 1rem;
+      margin-bottom: 1rem;
+    }
+
+    #cronometro {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 1.35rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    #cronometro.poco-tiempo {
+      color: #7a1f1f;
+    }
+
+    #trazabilidad {
+      margin: 0 0 0.75rem;
+      font-size: 0.9rem;
+      color: #444;
+    }
+
+    /* ---- Enunciado y alternativas ---- */
+    #enunciado {
+      font-size: 1.05rem;
+    }
+
+    #enunciado p:first-child {
+      margin-top: 0;
+    }
+
+    #alternativas {
+      list-style: none;
+      margin: 1rem 0 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .alternativa {
+      display: flex;
+      gap: 0.6rem;
+      border: 1px solid #767676;
+      border-radius: 0.375rem;
+      padding: 0.65rem 0.9rem;
+      background-color: #fff;
+      cursor: pointer;
+    }
+
+    .alternativa:hover {
+      border-color: #444;
+    }
+
+    .alternativa .letra {
+      font-weight: 700;
+      flex: 0 0 auto;
+    }
+
+    .alternativa .cuerpo > p:first-child {
+      margin-top: 0;
+    }
+
+    .alternativa .cuerpo > p:last-child {
+      margin-bottom: 0;
+    }
+
+    .alternativa[aria-checked="true"] {
+      border-color: #1d4ed8;
+      border-width: 2px;
+      background-color: #eaf1ff;
+      font-weight: 600;
+    }
+
+    /* ---- Cuadrícula de 65 casillas (RF-4.3): cinco marcas visuales, nunca
+           solo color ---- */
+    #cuadricula {
+      display: grid;
+      grid-template-columns: repeat(13, minmax(0, 1fr));
+      gap: 0.3rem;
+      margin: 0.5rem 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .casilla {
+      position: relative;
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+      padding: 0.3rem 0;
+      border: 1px solid #767676;
+      border-radius: 0.25rem;
+      background-color: #fff;
+      color: #1a1a1a;
+      cursor: pointer;
+      overflow: hidden;
+    }
+
+    .casilla:hover {
+      border-color: #1a1a1a;
+    }
+
+    /* Las tres marcas son INDEPENDIENTES y se combinan, porque los cinco
+       estados de RF-4.3 son combinaciones de ellas. Ninguna se comunica solo
+       por color: relleno (forma), triángulo (forma) y grosor de contorno. */
+
+    /* Respondida: fondo relleno. */
+    .casilla.marca-respondida {
+      background-color: #1a1a1a;
+      color: #fff;
+      border-color: #1a1a1a;
+    }
+
+    /* Marcada: triángulo en la esquina superior derecha. */
+    .casilla.marca-marcada {
+      border-color: #8a3f06;
+    }
+
+    .casilla.marca-marcada::after {
+      content: "";
+      position: absolute;
+      top: 0;
+      right: 0;
+      border-top: 0.6rem solid #8a3f06;
+      border-left: 0.6rem solid transparent;
+    }
+
+    /* Actual: contorno grueso. Va al final para que gane el borde. */
+    .casilla.marca-actual {
+      border: 3px solid #1d4ed8;
+      font-weight: 700;
+    }
+
+    .casilla.marca-actual:not(.marca-respondida) {
+      background-color: #eaf1ff;
+      color: #10234f;
+    }
+
+    .leyenda-cuadricula {
+      margin: 0.6rem 0 0;
+      font-size: 0.85rem;
+      color: #444;
+    }
+
+    /* ---- Panel de revisión por pregunta ---- */
+    #panel-revision {
+      background-color: #f5f7fa;
+    }
+
+    #panel-revision[hidden] {
+      display: none;
+    }
+
+    #panel-revision h3 {
+      margin-top: 0;
+    }
+
+    #revision-resultado {
+      font-weight: 600;
+      margin-top: 0;
+    }
+
+    .alternativa.es-correcta {
+      border-color: #1a5c2a;
+      border-width: 2px;
+      background-color: #e7f6ec;
+    }
+
+    .alternativa.es-incorrecta-seleccionada {
+      border-color: #8c1d18;
+      border-width: 2px;
+      background-color: #fbeaea;
+    }
+
+    .alternativa .etiqueta-revision {
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    /* ---- Resultados ---- */
+    .cifra-grande {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    table.desglose {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.95rem;
+      background-color: #fff;
+    }
+
+    table.desglose caption {
+      text-align: left;
+      font-weight: 600;
+      padding: 0.35rem 0;
+    }
+
+    table.desglose th,
+    table.desglose td {
+      border: 1px solid #ddd;
+      padding: 0.35rem 0.5rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    table.desglose thead th {
+      background-color: #f0f2f5;
+    }
+
+    .sin-datos {
+      color: #595959;
+      font-style: italic;
+    }
+
+    /* Correcto / incorrecto: color + icono + texto (RF-9.4, criterio 64). */
+    .marca-correcta,
+    .marca-incorrecta,
+    .marca-omitida,
+    .marca-sin-clave {
+      font-weight: 600;
+    }
+
+    .marca-correcta {
+      color: #1a5c2a;
+    }
+
+    .marca-incorrecta {
+      color: #8c1d18;
+    }
+
+    .marca-omitida,
+    .marca-sin-clave {
+      color: #444;
+    }
+
+    .detalle-pregunta {
+      background-color: #fff;
+      border: 1px solid #ddd;
+      border-radius: 0.375rem;
+      padding: 0.5rem 0.75rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .detalle-pregunta > summary {
+      cursor: pointer;
+    }
+
+    .detalle-pregunta.es-correcta {
+      border-left: 0.35rem solid #1a5c2a;
+    }
+
+    .detalle-pregunta.es-incorrecta {
+      border-left: 0.35rem solid #8c1d18;
+    }
+
+    .detalle-pregunta.es-omitida,
+    .detalle-pregunta.es-sin_clave {
+      border-left: 0.35rem solid #767676;
+    }
+
+    /* ---- Contenido renderizado desde el banco ---- */
+    .bloque-contenido table {
+      border-collapse: collapse;
+      margin: 0.75rem 0;
+      background-color: #fff;
+      font-size: 0.95rem;
+    }
+
+    .bloque-contenido th,
+    .bloque-contenido td {
+      border: 1px solid #767676;
+      padding: 0.3rem 0.55rem;
+      text-align: left;
+    }
+
+    .bloque-contenido thead th {
+      background-color: #f0f2f5;
+    }
+
+    .bloque-contenido caption {
+      caption-side: top;
+      text-align: left;
+      font-weight: 600;
+      padding-bottom: 0.25rem;
+    }
+
+    .figura {
+      border: 1px dashed #767676;
+      border-radius: 0.375rem;
+      background-color: #f7f7f7;
+      padding: 0.7rem 0.9rem;
+      margin: 0.85rem 0;
+    }
+
+    .figura img {
+      max-width: 100%;
+      height: auto;
+    }
+
+    .figura-titulo {
+      margin: 0 0 0.35rem;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    .figura-descripcion {
+      margin: 0 0 0.35rem;
+    }
+
+    .figura-bloqueante {
+      border-color: #b3261e;
+      background-color: #fbeaea;
+      color: #7a1f1f;
+    }
+
+    .figura details > summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+    }
+
+    /* ---- Notación original (RF-9.5, §7.9): par de nodos + clase en <body>.
+           Sin re-render: la regla aplica a lo ya pintado y a lo que se pinte
+           después. ---- */
+    .formula-cruda {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.95em;
+      background-color: #f0f2f5;
+      border: 1px solid #ddd;
+      border-radius: 0.25rem;
+      padding: 0 0.25rem;
+      word-break: break-word;
+    }
+
+    .formula-cruda-bloque {
+      display: block;
+      margin: 0.6rem 0;
+      padding: 0.4rem 0.6rem;
+    }
+
+    body.notacion-original .formula,
+    body.notacion-original .katex {
+      display: none;
+    }
+
+    body.notacion-original .formula-cruda[hidden] {
+      display: inline;
+    }
+
+    body.notacion-original .formula-cruda-bloque[hidden] {
+      display: block;
+    }
+
+    /* ---- Accesibilidad varia ---- */
+    .solo-lector {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    @media (max-width: 34rem) {
+      #cuadricula {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <h1>Práctica PAES · Competencia Matemática 1</h1>
+    <p id="progreso" class="secundario" aria-live="polite"></p>
+  </header>
+
+  <main id="app" aria-busy="true">
+    <p id="mensaje-carga">Cargando banco de preguntas…</p>
+  </main>
+
+  <!--
+    Estructura por fase en <template>: es el ÚNICO sitio donde viven los ids
+    que busca app.js (§7.2, patrón heredado de Lenguaje). app.js clona la
+    plantilla de la fase dentro de #app y pinta desde el estado.
+
+    Hay DOS fases, no tres: la app aterriza directamente en la pregunta 1 de 65
+    (mismo flujo de entrada que `paes_lenguaje01/prueba-paes.html`). La semilla,
+    la huella del pozo, el filtro de verificación ciega, el cronómetro y los
+    avisos honestos viven en el <details> "Ajustes y trazabilidad", fuera del
+    camino de quien solo quiere rendir la prueba.
+
+    El componente de avisos NO lleva ids: lo construye `pintarAvisos` dentro del
+    contenedor correspondiente, porque se pinta dos veces (ajustes y pie de
+    resultados) y dos copias de los mismos ids serían inválidas.
+  -->
+  <template id="plantilla-en-curso">
+    <div class="barra-ensayo">
+      <p class="secundario" id="progreso-ensayo"></p>
+      <p>
+        <span class="solo-lector" id="etiqueta-cronometro">Tiempo</span>
+        <span id="cronometro" role="timer" aria-live="off" aria-labelledby="etiqueta-cronometro"></span>
+      </p>
+    </div>
+
+    <p id="anuncio-tiempo" class="solo-lector" role="status" aria-live="polite"></p>
+
+    <section class="tarjeta" aria-labelledby="titulo-pregunta">
+      <h2 id="titulo-pregunta" class="solo-lector">Pregunta</h2>
+      <p id="trazabilidad"></p>
+      <div id="enunciado" class="bloque-contenido"></div>
+      <ul id="alternativas" role="radiogroup" aria-label="Alternativas"></ul>
+      <div class="fila-botones">
+        <button type="button" id="btn-anterior" class="boton-plano">&larr; Anterior</button>
+        <button type="button" id="btn-revisar" class="boton-plano">Revisar respuesta</button>
+        <button type="button" id="btn-siguiente" class="boton-plano">Siguiente &rarr;</button>
+        <button type="button" id="btn-marcar" class="boton-plano" aria-pressed="false">
+          Marcar para revisar
+        </button>
+        <button type="button" id="btn-limpiar" class="boton-plano">Borrar respuesta</button>
+      </div>
+    </section>
+
+    <section id="panel-revision" class="tarjeta" aria-labelledby="titulo-revision" hidden>
+      <h3 id="titulo-revision">Revisión de esta pregunta</h3>
+      <p id="revision-resultado"></p>
+      <div id="revision-explicacion" class="bloque-contenido"></div>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="titulo-cuadricula">
+      <h3 id="titulo-cuadricula">Ir a una pregunta</h3>
+      <div id="cuadricula" role="group" aria-labelledby="titulo-cuadricula"></div>
+      <p class="leyenda-cuadricula">
+        Contorno grueso: pregunta actual. Fondo relleno: respondida. Triángulo en la esquina:
+        marcada para revisar. Flechas para moverse, Inicio y Fin para los extremos.
+      </p>
+    </section>
+
+    <div class="fila-botones">
+      <button type="button" id="btn-notacion" class="boton-plano" aria-pressed="false">
+        Mostrar notación original
+      </button>
+      <button type="button" id="btn-finalizar">Finalizar y corregir</button>
+    </div>
+
+    <details class="tarjeta" id="ajustes">
+      <summary>Ajustes y trazabilidad de este ensayo</summary>
+
+      <p>
+        <label for="campo-semilla">Semilla</label>
+      </p>
+      <div class="campo-semilla">
+        <input type="text" id="campo-semilla" name="semilla" autocomplete="off"
+               aria-describedby="ayuda-semilla">
+        <button type="button" id="btn-copiar-semilla" class="boton-plano">Copiar</button>
+        <button type="button" id="btn-regenerar" class="boton-plano">Rearmar el ensayo</button>
+        <span id="copia-estado" role="status" class="secundario"></span>
+      </div>
+      <p id="ayuda-semilla" class="secundario">
+        La misma semilla con el mismo pozo genera siempre el mismo ensayo, en el mismo orden.
+        Rearmar descarta las respuestas dadas y reinicia el cronómetro.
+      </p>
+      <p id="huella-pozo" class="secundario"></p>
+
+      <div class="opcion">
+        <input type="checkbox" id="filtro-verificadas" aria-describedby="ayuda-verificadas">
+        <label for="filtro-verificadas">Solo pruebas con verificación ciega completa</label>
+      </div>
+      <p id="ayuda-verificadas" class="secundario">
+        Restringe el pozo a invierno 2024, invierno 2025 y regular 2025, las tres pruebas cuyas
+        claves se verificaron dos veces de forma independiente. Se aplica al rearmar el ensayo.
+      </p>
+      <p id="conteo-pozo" class="secundario" role="status"></p>
+      <p id="deficit-pozo" hidden></p>
+
+      <div class="fila-botones">
+        <button type="button" id="btn-cronometro" class="boton-plano" aria-pressed="true">
+          Cronómetro de 2 h 20 min activo
+        </button>
+      </div>
+      <p id="nota-tiempo" class="secundario" hidden></p>
+
+      <div id="avisos-ensayo"></div>
+
+      <p class="secundario">
+        El banco es un snapshot congelado de 5 pruebas PAES M1 publicadas por DEMRE
+        (<code>banco-preguntas-m1.json</code>, esquema <code>m1-1.1</code>). Las preguntas, las
+        claves y las explicaciones se transcribieron desde los folletos oficiales y los clavijeros;
+        el eje, la habilidad y el contenido son inferidos contra el temario, no publicados por
+        pregunta. Detalles de procedencia y limitaciones en el <code>README.md</code>.
+      </p>
+    </details>
+  </template>
+
+  <template id="plantilla-resultados">
+    <section class="tarjeta" aria-labelledby="titulo-resultados">
+      <h2 id="titulo-resultados">Resultados del ensayo</h2>
+      <p class="cifra-grande" id="res-puntaje"></p>
+      <p id="res-porcentaje"></p>
+      <p id="res-contadores"></p>
+      <p id="res-sin-responder"></p>
+      <p id="res-limite" class="secundario" hidden></p>
+      <p id="res-trazabilidad" class="secundario"></p>
+      <p id="anuncio-fin" role="status" aria-live="polite"></p>
+      <div class="fila-botones">
+        <button type="button" id="btn-rehacer" class="boton-plano">Rehacer el mismo ensayo</button>
+        <button type="button" id="btn-nuevo">Generar un ensayo nuevo</button>
+      </div>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="titulo-desgloses">
+      <h2 id="titulo-desgloses">Desglose</h2>
+      <div id="desglose-eje"></div>
+      <div id="desglose-habilidad"></div>
+      <div id="desglose-contenido"></div>
+    </section>
+
+    <section class="tarjeta" aria-labelledby="titulo-detalle">
+      <h2 id="titulo-detalle">Detalle por pregunta</h2>
+      <p class="secundario">
+        Cada pregunta se despliega bajo demanda: el enunciado, las alternativas y la explicación
+        se renderizan al abrirla.
+      </p>
+      <div id="detalle-preguntas"></div>
+    </section>
+
+    <div id="avisos-resultados"></div>
+  </template>
+
+  <!-- KaTeX vendorizado: si el archivo no está, `katex` queda indefinido y
+       app.js degrada a LaTeX en texto con un aviso visible (§7.10). -->
+  <script src="vendor/katex/katex.min.js"></script>
+
+  <script src="dominio.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

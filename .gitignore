@@ -1,0 +1,12 @@
+node_modules/
+
+# KaTeX se genera con `npm run vendor:katex` desde la dependencia de npm.
+vendor/katex/
+
+# Artefactos internos del proceso de construcción (diseño, revisiones, plan).
+# No forman parte de la app.
+.agents/
+
+# Archivos temporales
+tmp/
+*.log
