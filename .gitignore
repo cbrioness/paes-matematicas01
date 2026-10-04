@@ -1,7 +1,8 @@
 node_modules/
 
-# KaTeX se genera con `npm run vendor:katex` desde la dependencia de npm.
-vendor/katex/
+# vendor/katex/ SÍ se versiona: así la app funciona al abrirla desde GitHub
+# Pages sin que nadie tenga que instalar nada. Se regenera con
+# `npm run vendor:katex`.
 
 # Artefactos internos del proceso de construcción (diseño, revisiones, plan).
 # No forman parte de la app.

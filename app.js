@@ -1002,8 +1002,13 @@ function pintarEnCurso() {
     pintarProgreso();
   });
   el('btn-revisar').addEventListener('click', function () {
-    revisadas[preguntaActual().id] = true;
+    // Alterna, no deshabilita: deshabilitar el botón que tiene el foco lo
+    // perdería y rompería el recorrido con teclado.
+    var id = preguntaActual().id;
+    if (revisadas[id] === true) delete revisadas[id];
+    else revisadas[id] = true;
     pintarPregunta();
+    el('btn-revisar').focus();
   });
   el('btn-notacion').addEventListener('click', alternarNotacionOriginal);
   el('btn-finalizar').addEventListener('click', finalizarConConfirmacion);
@@ -1153,13 +1158,13 @@ function pintarPanelRevision(pregunta, revision) {
   if (revision === null) {
     panel.hidden = true;
     vaciar(el('revision-explicacion'));
-    boton.disabled = false;
+    boton.setAttribute('aria-expanded', 'false');
     boton.textContent = 'Revisar respuesta';
     return;
   }
 
-  boton.disabled = true;
-  boton.textContent = 'Respuesta revisada';
+  boton.setAttribute('aria-expanded', 'true');
+  boton.textContent = 'Ocultar la revisión';
 
   var marca = MARCAS_ESTADO[revision.estado] || MARCAS_ESTADO.omitida;
   var resultado = el('revision-resultado');
