@@ -1039,23 +1039,27 @@ function irA(indice) {
   pintarProgreso();
 }
 
-/** Trazabilidad de la pregunta visible (RF-4.8). */
-function pintarTrazabilidad(pregunta) {
+/**
+ * Trazabilidad de una pregunta (RF-4.8): prueba de origen, número original de
+ * 65, página y documento.
+ *
+ * Se pinta SOLO en el detalle de la corrección, no mientras se rinde: durante
+ * el ensayo adelanta información sobre la pregunta y es ruido visual; al
+ * revisar es lo que permite ir al PDF original a mirarla.
+ */
+function textoTrazabilidad(pregunta) {
   var prueba = estadoGlobal.banco.pruebas.find(function (pr) { return pr.id === pregunta.prueba_id; });
-  var partes = [
+  return [
     nombrePrueba(prueba),
     'pregunta ' + pregunta.numero_original + ' de ' + (prueba ? prueba.n_preguntas : 65),
     'página ' + pregunta.pagina_pdf,
     pregunta.documento_origen || (prueba ? prueba.documento_origen : ''),
-  ];
-  el('trazabilidad').textContent = partes.filter(Boolean).join(' · ');
+  ].filter(Boolean).join(' · ');
 }
 
 function pintarPregunta() {
   var t0 = performance.now();
   var pregunta = preguntaActual();
-
-  pintarTrazabilidad(pregunta);
 
   var contenedor = el('enunciado');
   vaciar(contenedor);
@@ -1591,15 +1595,13 @@ function pintarDetalle(detalle) {
 
 function pintarDetalleDePregunta(cuerpo, entrada) {
   var pregunta = entrada.pregunta;
-  var prueba = estadoGlobal.banco.pruebas.find(function (pr) { return pr.id === pregunta.prueba_id; });
 
+  // Procedencia completa, con el documento, para poder abrir el PDF original.
+  cuerpo.appendChild(crear('p', 'secundario trazabilidad', textoTrazabilidad(pregunta)));
   cuerpo.appendChild(crear('p', 'secundario', [
-    nombrePrueba(prueba),
-    'pregunta ' + pregunta.numero_original,
-    'página ' + pregunta.pagina_pdf,
     nombreCategoria(pregunta.eje),
     nombreCategoria(pregunta.habilidad),
-    pregunta.contenido_id,
+    nombreCategoria(pregunta.contenido_id),
   ].join(' · ')));
 
   var enunciado = crear('div', 'bloque-contenido');
@@ -1617,7 +1619,19 @@ function pintarDetalleDePregunta(cuerpo, entrada) {
     var etiquetas = [];
     if (alternativa.id === entrada.alternativaCorrectaId) etiquetas.push('✔ correcta');
     if (alternativa.id === entrada.seleccion) etiquetas.push('tu respuesta');
+
     li.appendChild(crear('span', 'letra', alternativa.id + ') '));
+    // La etiqueta va junto a la letra y no al final: el cuerpo de la
+    // alternativa son bloques (<p>, tablas), así que una marca añadida después
+    // caería en su propia línea, lejos de la alternativa que califica.
+    if (etiquetas.length > 0) {
+      li.appendChild(crear(
+        'strong',
+        alternativa.id === entrada.alternativaCorrectaId ? 'marca-correcta' : 'marca-incorrecta',
+        '[' + etiquetas.join(', ') + '] '
+      ));
+    }
+
     var cuerpoAlt = crear('span', 'bloque-contenido');
     pintarContenido(
       Dominio.tokenizarContenido(alternativa.texto).bloques,
@@ -1626,13 +1640,6 @@ function pintarDetalleDePregunta(cuerpo, entrada) {
       { pregunta: pregunta }
     );
     li.appendChild(cuerpoAlt);
-    if (etiquetas.length > 0) {
-      li.appendChild(crear(
-        'strong',
-        alternativa.id === entrada.alternativaCorrectaId ? 'marca-correcta' : 'marca-incorrecta',
-        ' [' + etiquetas.join(', ') + ']'
-      ));
-    }
     lista.appendChild(li);
   });
   cuerpo.appendChild(lista);

@@ -305,12 +305,6 @@
       color: #7a1f1f;
     }
 
-    #trazabilidad {
-      margin: 0 0 0.75rem;
-      font-size: 0.9rem;
-      color: #444;
-    }
-
     /* ---- Enunciado y alternativas ---- */
     #enunciado {
       font-size: 1.05rem;
@@ -538,6 +532,11 @@
       cursor: pointer;
     }
 
+    /* Procedencia de la pregunta: solo en el detalle de la corrección. */
+    .trazabilidad {
+      word-break: break-word;
+    }
+
     .detalle-pregunta.es-correcta {
       border-left: 0.35rem solid #1a5c2a;
     }
@@ -713,7 +712,12 @@
 
     <section class="tarjeta" aria-labelledby="titulo-pregunta">
       <h2 id="titulo-pregunta" class="solo-lector">Pregunta</h2>
-      <p id="trazabilidad"></p>
+      <!--
+        La trazabilidad (prueba de origen, número original, página y documento)
+        NO se muestra mientras se rinde: adelanta información sobre la pregunta
+        y es ruido visual. El dato no se pierde: aparece en el detalle por
+        pregunta de la corrección, donde sirve para ir al PDF original.
+      -->
       <div id="enunciado" class="bloque-contenido"></div>
       <ul id="alternativas" role="radiogroup" aria-label="Alternativas"></ul>
       <div class="fila-botones">

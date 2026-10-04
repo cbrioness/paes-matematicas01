@@ -21,7 +21,7 @@ Luego abre `http://localhost:8080/prueba-m1.html`.
 - **Ensayo de 65 preguntas** con la distribución real por eje temático medida sobre las pruebas oficiales: 22 de Números, 19 de Álgebra y funciones, 12 de Geometría y 12 de Probabilidad y estadística.
 - **Corrección al terminar**: puntaje, respuesta correcta y explicación de cada pregunta.
 - **Desglose por eje temático y por habilidad**, que es lo útil para saber dónde reforzar.
-- **Trazabilidad**: cada pregunta indica de qué prueba oficial viene, su número original y su página en el PDF.
+- **Trazabilidad al corregir**: en el detalle de cada pregunta aparece de qué prueba oficial viene, su número original, su página y el PDF, para poder ir a verla. Durante el ensayo no se muestra, porque adelanta información sobre la pregunta.
 - **Ensayos reproducibles**: la misma semilla sobre el mismo pozo genera el mismo ensayo. La semilla y la huella del pozo están en el panel "Ajustes y trazabilidad".
 - **Navegación completa**: cuadrícula de 65 preguntas, marcar para revisar, borrar respuesta, navegación por teclado.
 - Fórmulas renderizadas con KaTeX, tablas, y soporte de figuras.
@@ -59,6 +59,44 @@ Ejecutar los tests:
 ```sh
 npm test
 ```
+
+## Parámetros de URL
+
+Todos son opcionales y ninguno es fatal: un valor inválido se ignora, se usa el valor por defecto y queda anotado en el panel "Ajustes y trazabilidad".
+
+| Parámetro | Valores | Para qué |
+|---|---|---|
+| `semilla` | 1–64 caracteres (se trunca si sobra) | repetir un ensayo exacto |
+| `verificadas` | `1` / `0` / `true` / `false` | restringir el pozo a las tres pruebas con verificación doble |
+| `tiempo` | `ilimitado`, o segundos entre 60 y 36000 | límite a medida; la pantalla de resultados lo declara |
+| `notacion` | `1` / `0` / `true` / `false` | abrir con las fórmulas en LaTeX en vez de renderizadas |
+
+Ejemplo: `prueba-m1.html?semilla=visual-66&tiempo=ilimitado`.
+
+## Figuras
+
+Las 121 figuras del banco están hoy con `archivo: null` y se muestran como "Figura no disponible (imagen pendiente)" acompañadas de su descripción y su transcripción, que es lo que permite responder las que no dependen del dibujo. La app **no** navega fuera de su directorio: resuelve `figuras/` + el nombre base del archivo. Cuando se extraigan las imágenes, se copian a `figuras/` conservando el nombre y aparecen solas, sin tocar código.
+
+## Verificación en navegador
+
+Comprobado con Chromium (Playwright) sobre macOS, Apple Silicon, sirviendo con `python3 -m http.server 8080`.
+
+- **Semilla de referencia `visual-66`**: su ensayo contiene `m1-inv24-048` en la posición 9 (el caso del salto de línea: sus pasos 1), 2) y 3) tienen que verse en tres líneas distintas), `m1-reg24-059` en la 19 (tabla sin cabecera: 13 celdas `<td>` en una sola fila) y `m1-reg24-006` en la 39 (tabla + LaTeX + figura pendiente en la misma pregunta).
+- `file://` muestra un `role="alert"` con el comando y la URL a abrir, sin dejar ningún botón activo.
+- Con `vendor/katex/` ausente, las fórmulas salen como LaTeX legible en monoespaciado, aparece el aviso y la app sigue usable.
+- Recorrido completo con teclado, sin ratón: responder, revisar, marcar, saltar por la cuadrícula con las flechas, finalizar y leer los resultados. El foco se ve siempre (contorno de 3 px).
+- Correcto / incorrecto se distingue en escala de grises: además del color lleva icono y texto.
+- El interruptor "mostrar notación original" alterna sin recargar ni volver a renderizar, y sigue activo al cambiar de pregunta.
+
+**Rendimiento medido** (Chromium, MacBook Apple Silicon, banco de 548 KB):
+
+| Medida | Presupuesto | Medido |
+|---|---|---|
+| Carga inicial completa (fetch + validación + pozo + barrido de contenido + primer render) | < 1000 ms | 15–48 ms |
+| Barrido de avisos de contenido, por separado | — | 4,5–6,1 ms |
+| Render de una pregunta con tabla + LaTeX + figura pendiente | < 50 ms | 44 ms la primera vez (incluye el arranque de KaTeX), 0,7–3,6 ms después |
+
+Las tres se pueden volver a medir desde la consola del navegador: `Medidas.cargaInicialMs`, `Medidas.barridoContenidoMs` y `Medidas.medirRenderDe('m1-reg24-006')`.
 
 ## Proyecto hermano
 
